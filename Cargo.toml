@@ -1,0 +1,20 @@
+[package]
+name = "pseudo_pool"
+description = ""
+version = "0.1.0"
+edition = "2021"
+authors = ["Evan Williams <evanjpw@gmail.com>"]
+readme = "README.md"
+license-file = "LICENSE"
+keywords = []
+repository = "https://github.com/evanjpw/pseudo_pool.git"
+rust-version = "1.62.0"
+
+[dependencies]
+crossbeam-channel = { version = "0.5.13", features = ["std"] }
+uuid = {  version = "1.10.0", features = ["v4"] }
+thiserror = "1.0.63"
+
+[features]
+default = ["std"]
+std = ["crossbeam-channel/std"]
