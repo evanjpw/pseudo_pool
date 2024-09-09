@@ -6,6 +6,8 @@ https://github.com/evanjpw/pseudo_pool)
 https://crates.io/crates/pseudo_pool)
 [![Documentation](https://docs.rs/pseudo_pool/badge.svg)](
 https://docs.rs/pseudo_pool)
+![Build](
+https://github.com/evanjpw/pseudo_pool/actions/workflows/rust.yml/badge.svg)
 
 _A pool-like collection that automatically returns objects to the pool & blocks when the pool is empty_
 
@@ -43,7 +45,7 @@ pseudo_pool = "0.1.0" # A version number that inspires confidence
 
 TBD
 
-## benchmarks
+## Benchmarks
 
 No.
 

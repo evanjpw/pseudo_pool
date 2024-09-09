@@ -1,7 +1,7 @@
 [package]
 name = "pseudo_pool"
 description = "A pool-like collection that automatically returns objects to the pool & blocks when the pool is empty"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Evan Williams <evanjpw@gmail.com>"]
 readme = "README.md"
