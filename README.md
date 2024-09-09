@@ -36,7 +36,7 @@ So I wrote this thing.
 
 ## Usage
 
-```
+```toml
 [dependencies]
 pseudo_pool = "0.1.0" # A version number that inspires confidence
 ```

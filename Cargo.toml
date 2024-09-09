@@ -10,6 +10,7 @@ keywords = ["blocking", "pool", "object-pool"]
 repository = "https://github.com/evanjpw/pseudo_pool.git"
 rust-version = "1.62.0"
 categories = ["concurrency", "memory-management", "data-structures"]
+documentation = "https://docs.rs/pseudo_pool/latest/pseudo_pool/"
 
 [dependencies]
 crossbeam-channel = { version = "0.5.13", features = ["std"] }
