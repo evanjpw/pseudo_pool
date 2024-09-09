@@ -62,7 +62,6 @@ impl<T> ExternalPoolEntry<T> {
 impl<T> Drop for ExternalPoolEntry<T> {
     fn drop(&mut self) {
         let id = self.pool_entry.pool_entry_id;
-        dbg!("drp", id);
         self.notifier.send(id).unwrap()
     }
 }
@@ -117,7 +116,14 @@ impl <T> Pool<T> {
             if let Some(entry) = self.try_checkout() {
                 return Ok(entry);
             }
-            let _ = self.notification_receiver.recv_timeout(POOL_POLLING_TIMEOUT)?;
+
+            let entry_id = self.notification_receiver.recv_timeout(POOL_POLLING_TIMEOUT);
+
+            if let Ok(entry_id) = entry_id {
+                self.checkin(entry_id)?;
+            } else {
+                // TODO: Detect a real error & return it?
+            }
         }
     }
 
@@ -137,7 +143,6 @@ impl <T> Pool<T> {
 
     fn process_checkins(&mut self) {
         if self.notification_receiver.is_empty() {
-            dbg!("process_checkins recv empt");
             return;
         }
         loop {
@@ -152,7 +157,6 @@ impl <T> Pool<T> {
 
 
     fn checkin(&mut self, entry_id: PoolEntryId) -> Result<()> {
-        dbg!("checkin", entry_id);
         let entry = self.map.get(&entry_id);
         if let Some(entry) = entry {
             entry.in_use.store(false, Ordering::Release);
@@ -175,13 +179,10 @@ impl <T> Pool<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // pool.process_checkins();
-    // pool.process_checkins();
-    // pool1
 
 
     #[test]
-    fn test_() {
+    fn test_non_blocking() {
         let mut pool = Pool::new();
         pool.add_entry(String::from("test"));
         pool.add_entry(String::from("test2"));
@@ -224,5 +225,28 @@ mod tests {
         let l1_returns = pool.try_checkout().unwrap();
         assert_eq!(pool.leases(), 0);
         assert_eq!(*l1_returns.get_payload(), l1a_value);
+    }
+
+    #[test]
+    fn test_blocking() {
+        let mut pool = Pool::new_from_iterable(
+            vec![String::from("test1"), String::from("test2")]
+        );
+        pool.extend_entries(vec![String::from("test3"), String::from("test4")]);
+        assert_eq!(pool.leases(), 4);
+        let l1 = pool.checkout_blocking().unwrap();
+        assert_eq!(pool.update_leases(), 3);
+        let l2 = pool.checkout_blocking().unwrap();
+        assert_eq!(pool.update_leases(), 2);
+        let _l3 = pool.checkout_blocking().unwrap();
+        assert_eq!(pool.update_leases(), 1);
+        assert_ne!(*l1.get_payload(), *l2.get_payload());
+        drop(l1);
+        assert_eq!(pool.update_leases(), 2);
+        let _l1a = pool.checkout_blocking().unwrap();
+        assert_eq!(pool.update_leases(), 1);
+        let _l4 = pool.checkout_blocking().unwrap();
+        assert_eq!(pool.update_leases(), 0);
+        // TODO: Somehow test blocking
     }
 }
