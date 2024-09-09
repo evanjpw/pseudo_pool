@@ -1,14 +1,15 @@
 [package]
 name = "pseudo_pool"
-description = ""
+description = "A pool-like collection that automatically returns objects to the pool & blocks when the pool is empty"
 version = "0.1.0"
 edition = "2021"
 authors = ["Evan Williams <evanjpw@gmail.com>"]
 readme = "README.md"
 license-file = "LICENSE"
-keywords = []
+keywords = ["blocking", "pool", "object-pool"]
 repository = "https://github.com/evanjpw/pseudo_pool.git"
 rust-version = "1.62.0"
+categories = ["concurrency", "memory-management", "data-structures"]
 
 [dependencies]
 crossbeam-channel = { version = "0.5.13", features = ["std"] }

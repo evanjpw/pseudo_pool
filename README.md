@@ -1,5 +1,12 @@
 # pseudo_pool
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](
+https://github.com/evanjpw/pseudo_pool)
+[![Cargo](https://img.shields.io/crates/v/pseudo_pool.svg)](
+https://crates.io/crates/pseudo_pool)
+[![Documentation](https://docs.rs/pseudo_pool/badge.svg)](
+https://docs.rs/pseudo_pool)
+
 _A pool-like collection that automatically returns objects to the pool & blocks when the pool is empty_
 
 ## Motivation
