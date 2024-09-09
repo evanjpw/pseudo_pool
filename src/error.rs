@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crossbeam_channel::{RecvTimeoutError, SendError};
+use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Error, Debug)]
@@ -9,7 +9,7 @@ pub enum PseudoPoolError {
     #[error(transparent)]
     RecvTimeoutError(#[from] RecvTimeoutError),
     #[error(transparent)]
-    SendError(#[from] SendError<()>)
+    SendError(#[from] SendError<()>),
 }
 
 pub type Result<T> = std::result::Result<T, PseudoPoolError>;

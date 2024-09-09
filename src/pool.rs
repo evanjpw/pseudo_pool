@@ -1,32 +1,34 @@
+use crate::error::PseudoPoolError;
+use crate::Result;
+use crossbeam_channel;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::Duration;
 use uuid::Uuid;
-use crossbeam_channel;
-use crate::{Result};
-use crate::error::PseudoPoolError;
 
 const POOL_POLLING_TIMEOUT: Duration = Duration::from_secs(5);
 
-type PoolEntryId  = Uuid;
+type PoolEntryId = Uuid;
 
 struct PoolEntry<T> {
     pool_entry_id: PoolEntryId,
     payload: Arc<RwLock<T>>,
 }
 
-impl <T> PoolEntry<T> {
+impl<T> PoolEntry<T> {
     fn new(payload: T) -> Self {
         let pool_entry_id = Uuid::new_v4();
 
-        Self { pool_entry_id, payload: Arc::new(RwLock::new(payload)),
+        Self {
+            pool_entry_id,
+            payload: Arc::new(RwLock::new(payload)),
         }
     }
 }
 
-impl <T> Clone for PoolEntry<T> {
+impl<T> Clone for PoolEntry<T> {
     fn clone(&self) -> Self {
         Self {
             pool_entry_id: self.pool_entry_id.clone(),
@@ -43,10 +45,11 @@ pub struct ExternalPoolEntry<T> {
 }
 
 impl<T> ExternalPoolEntry<T> {
-    fn new(pool_entry: PoolEntry<T>, notifier: crossbeam_channel::Sender<PoolEntryId>,
-           ) -> Self {
-        ExternalPoolEntry { pool_entry, notifier,
-            phantom: PhantomData
+    fn new(pool_entry: PoolEntry<T>, notifier: crossbeam_channel::Sender<PoolEntryId>) -> Self {
+        ExternalPoolEntry {
+            pool_entry,
+            notifier,
+            phantom: PhantomData,
         }
     }
 
@@ -71,23 +74,29 @@ struct InternalPoolEntry<T> {
     in_use: AtomicBool,
 }
 
-impl <T> InternalPoolEntry<T> {
+impl<T> InternalPoolEntry<T> {
     fn new(payload: T) -> Self {
-        Self { pool_entry: PoolEntry::new(payload), in_use: AtomicBool::new(false) }
+        Self {
+            pool_entry: PoolEntry::new(payload),
+            in_use: AtomicBool::new(false),
+        }
     }
 }
 
 pub struct Pool<T> {
-    map:HashMap<PoolEntryId, InternalPoolEntry<T>>,
+    map: HashMap<PoolEntryId, InternalPoolEntry<T>>,
     notification_sender: crossbeam_channel::Sender<PoolEntryId>,
     notification_receiver: crossbeam_channel::Receiver<PoolEntryId>,
 }
 
-impl <T> Pool<T> {
+impl<T> Pool<T> {
     pub fn new() -> Self {
-        let (notification_sender, notification_receiver)
-            = crossbeam_channel::unbounded();
-        Self { map: HashMap::new(), notification_sender, notification_receiver  }
+        let (notification_sender, notification_receiver) = crossbeam_channel::unbounded();
+        Self {
+            map: HashMap::new(),
+            notification_sender,
+            notification_receiver,
+        }
     }
 
     pub fn new_from_iterable<V: IntoIterator<Item = T>>(vec: V) -> Self {
@@ -111,13 +120,15 @@ impl <T> Pool<T> {
         ExternalPoolEntry::new(entry, self.notification_sender.clone())
     }
 
-    pub fn checkout_blocking(&mut self) -> Result<ExternalPoolEntry<T>>{
+    pub fn checkout_blocking(&mut self) -> Result<ExternalPoolEntry<T>> {
         loop {
             if let Some(entry) = self.try_checkout() {
                 return Ok(entry);
             }
 
-            let entry_id = self.notification_receiver.recv_timeout(POOL_POLLING_TIMEOUT);
+            let entry_id = self
+                .notification_receiver
+                .recv_timeout(POOL_POLLING_TIMEOUT);
 
             if let Ok(entry_id) = entry_id {
                 self.checkin(entry_id)?;
@@ -130,9 +141,11 @@ impl <T> Pool<T> {
     pub fn try_checkout(&mut self) -> Option<ExternalPoolEntry<T>> {
         self.process_checkins();
         for (_, entry) in self.map.iter_mut() {
-            if let Ok(in_use) = entry.in_use.compare_exchange(
-                false, true, Ordering::Acquire, Ordering::Relaxed
-            ) {
+            if let Ok(in_use) =
+                entry
+                    .in_use
+                    .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            {
                 assert!(!in_use);
                 let pool_entry = entry.pool_entry.clone();
                 return Some(self.get_external_entry(pool_entry));
@@ -155,7 +168,6 @@ impl <T> Pool<T> {
         }
     }
 
-
     fn checkin(&mut self, entry_id: PoolEntryId) -> Result<()> {
         let entry = self.map.get(&entry_id);
         if let Some(entry) = entry {
@@ -172,14 +184,16 @@ impl <T> Pool<T> {
     }
 
     pub fn leases(&self) -> usize {
-        self.map.iter().filter(|(_, entry)| !entry.in_use.load(Ordering::Acquire)).count()
+        self.map
+            .iter()
+            .filter(|(_, entry)| !entry.in_use.load(Ordering::Acquire))
+            .count()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     #[test]
     fn test_non_blocking() {
@@ -229,9 +243,7 @@ mod tests {
 
     #[test]
     fn test_blocking() {
-        let mut pool = Pool::new_from_iterable(
-            vec![String::from("test1"), String::from("test2")]
-        );
+        let mut pool = Pool::new_from_iterable(vec![String::from("test1"), String::from("test2")]);
         pool.extend_entries(vec![String::from("test3"), String::from("test4")]);
         assert_eq!(pool.leases(), 4);
         let l1 = pool.checkout_blocking().unwrap();
